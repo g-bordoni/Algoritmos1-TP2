@@ -19,7 +19,7 @@ void MergeSort::merge (Edge* edges_array, int begin, int middle, int end)
     k = begin;
     while (i < left_array_size && j < right_array_size)
     {
-        if (left_array[i].distance >= right_array[j].distance)
+        if (left_array[i].distance <= right_array[j].distance)
         {
             edges_array[k] = left_array[i];
             i++;
