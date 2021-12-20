@@ -7,6 +7,58 @@
 #include <fstream>
 
 
+int* test_1(Edge* list, int size)
+{
+    unsigned found = 0;
+    int edges_index[2];
+    int boundary_index[2];
+    for (int i=size-1; i>=0; i--)
+    {
+        if (found > 2) break;
+        else 
+        {
+            if (list[i].boundaries[0]->is_drone_supporting || list[i].boundaries[1]->is_drone_supporting)
+            {
+                if(!list[i].boundaries[0]->is_drone_supporting)
+                {
+                    list[i].boundaries[0]->is_drone_supporting = true;
+                    edges_index[found] = i;
+                    boundary_index[found] = 0;
+                    found++;
+                }
+                else if (!list[i].boundaries[1]->is_drone_supporting)
+                {
+                    list[i].boundaries[1]->is_drone_supporting = true;
+                    edges_index[found] = i;
+                    boundary_index[found] = 1;
+                    found++;
+                }
+                else continue;
+            }
+        }
+    }
+    for (int i = 0; i<2; i++)
+        list[edges_index[i]].boundaries[boundary_index[i]]->is_drone_supporting = false;
+    
+    return edges_index;
+}
+
+int* test_2(Edge* list, int size)
+{
+    int edge_index[1];
+    for(int i=size-1; i>=0; i--)
+    {
+        if(!list[i].boundaries[0]->is_drone_supporting && !list[i].boundaries[1]->is_drone_supporting)
+        {
+            edge_index[0] = i;
+            return edge_index;
+        }
+    }
+    edge_index[0] = 0;
+    return edge_index;
+}
+
+
 int main (int argc, char* argv[])
 {
     std::string filename(argv[1]);
@@ -26,27 +78,49 @@ int main (int argc, char* argv[])
     int motocycles_price = std::stoi(input_variables[3]);
     int truck_price = std::stoi(input_variables[4]);
 
-    Node node;
     KruscalAlgorithm ka(nodes_number);
-    int index = 0;
     std::string *position;
     while (std::getline(input_file, line))
     {
-        node.index = index;
-        node.is_drone_supporting = false;
-        node.nodes_set_index = index;
         position = Utils::split(line, 2);
-        node.position[0] = stoi(position[0]);
-        node.position[1] = stoi(position[1]);
-        delete[] position;
-        index++;
-        ka.insert_node(node);
-
+        ka.insert(stoi(position[0]), stoi(position[1]));
+        delete[] position;        
     }
     
     input_file.close();
 
     Edge *result = ka.get_mst();
+
+    float used_km_per_motocycles = 0.0;
+    float used_km_per_trucks = 0.0;
+
+    for (int i = nodes_number - 2; i >=0; i--)
+    {
+        
+        if (drones_available && !result[i].boundaries[0]->is_drone_supporting)
+        {
+            result[i].boundaries[0]->is_drone_supporting = true;
+            drones_available--;
+        }
+        if (drones_available && !result[i].boundaries[1]->is_drone_supporting)
+        {
+            result[i].boundaries[1]->is_drone_supporting = true;
+            drones_available--;
+        }
+        if (result[i].boundaries[0]->is_drone_supporting && result[i].boundaries[1]->is_drone_supporting)
+            continue;
+        else
+        {
+            if (result[i].distance > motocycles_limit)
+                used_km_per_trucks += float(result[i].distance);
+            else
+                used_km_per_motocycles += float(result[i].distance);
+        }
+    }
+
+    std::cout << used_km_per_motocycles*motocycles_price;
+    std::cout << " ";
+    std::cout << used_km_per_trucks*truck_price;
 
     return 0;
 }
