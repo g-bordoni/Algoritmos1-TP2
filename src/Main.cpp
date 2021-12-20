@@ -10,11 +10,11 @@
 int* test_1(Edge* list, int size)
 {
     unsigned found = 0;
-    int edges_index[2];
+    int *edges_index = new int[2];
     int boundary_index[2];
     for (int i=size-1; i>=0; i--)
     {
-        if (found > 2) break;
+        if (found >= 2) break;
         else 
         {
             if (list[i].boundaries[0]->is_drone_supporting || list[i].boundaries[1]->is_drone_supporting)
@@ -38,24 +38,25 @@ int* test_1(Edge* list, int size)
         }
     }
     for (int i = 0; i<2; i++)
-        list[edges_index[i]].boundaries[boundary_index[i]]->is_drone_supporting = false;
-    
+    {
+        if (i<found)
+            list[edges_index[i]].boundaries[boundary_index[i]]->is_drone_supporting = false;
+        else
+            edges_index[i] = -1;
+    }
     return edges_index;
 }
 
-int* test_2(Edge* list, int size)
+int test_2(Edge* list, int size)
 {
-    int edge_index[1];
     for(int i=size-1; i>=0; i--)
     {
         if(!list[i].boundaries[0]->is_drone_supporting && !list[i].boundaries[1]->is_drone_supporting)
         {
-            edge_index[0] = i;
-            return edge_index;
+            return i;
         }
     }
-    edge_index[0] = 0;
-    return edge_index;
+    return -1;
 }
 
 
@@ -94,20 +95,51 @@ int main (int argc, char* argv[])
     float used_km_per_motocycles = 0.0;
     float used_km_per_trucks = 0.0;
 
+    int* aux;
+    int aux1;
+    int size = nodes_number -1;
+    int action = 0;
+    while (drones_available)
+    {
+        if (drones_available == 1)
+        {
+            aux = test_1(result, size);
+            if (aux[0] < 0) break;
+            result[aux[0]].is_drone_covered = true;
+            drones_available--;
+        }
+        else
+        {
+            aux = test_1(result, size);
+            aux1 = test_2(result, size);
+            if (aux[0] < 0 || aux[1] < 0) action = 2;
+            if (action == 0 && aux1 < 0) action = 1;
+            if (action == 0) 
+                action = ((result[aux[0]].distance + result[aux[1]].distance) > result[aux1].distance)? 1:2;
+            if (action==1)
+            {
+                result[aux[0]].boundaries[0]->is_drone_supporting = true;
+                result[aux[0]].boundaries[1]->is_drone_supporting = true;
+                result[aux[1]].boundaries[0]->is_drone_supporting = true;
+                result[aux[1]].boundaries[1]->is_drone_supporting = true;
+                result[aux[0]].is_drone_covered = true;
+                result[aux[1]].is_drone_covered = true;
+                drones_available -= 2;
+            }
+            else
+            {
+                result[aux1].boundaries[0]->is_drone_supporting = true;
+                result[aux1].boundaries[1]->is_drone_supporting = true;
+                result[aux1].is_drone_covered = true;
+                drones_available -= 2;
+            }
+            delete[] aux;
+        }
+    }
+
     for (int i = nodes_number - 2; i >=0; i--)
     {
-        
-        if (drones_available && !result[i].boundaries[0]->is_drone_supporting)
-        {
-            result[i].boundaries[0]->is_drone_supporting = true;
-            drones_available--;
-        }
-        if (drones_available && !result[i].boundaries[1]->is_drone_supporting)
-        {
-            result[i].boundaries[1]->is_drone_supporting = true;
-            drones_available--;
-        }
-        if (result[i].boundaries[0]->is_drone_supporting && result[i].boundaries[1]->is_drone_supporting)
+        if (result[i].is_drone_covered)
             continue;
         else
         {
