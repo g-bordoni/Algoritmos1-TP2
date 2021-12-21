@@ -39,12 +39,12 @@ void Set::join(Set* set)
     for (int i = 0; i < other_set->size; i++)
     {
         element = other_set->first_element;
-        element->node->index = receving_set->index;
+        element->node->nodes_set_index = receving_set->index;
         other_set->first_element = other_set->first_element->next;
         receving_set->last_element->next = element;
         receving_set->last_element = element;
     }
-    receving_set->size = this->size + set->size; 
+    receving_set->size = receving_set->size + other_set->size;
     other_set->size = 0;
 }
 

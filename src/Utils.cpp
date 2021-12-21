@@ -2,9 +2,6 @@
 
 std::string* Utils::split(std::string original, int return_expected_size)
 {
-/*
-    Split a string in an array of length equals to the expected size
-*/
     std::string space = " ";
     int original_size = original.size();
     int current_index = 0;
